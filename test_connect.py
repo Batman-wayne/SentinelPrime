@@ -1,3 +1,5 @@
+"""Purpose: This file is for connecting airsim to Unreal? (Please edit this comment @Harris)"""
+
 # Libraries 
 import airsim
 import pprint

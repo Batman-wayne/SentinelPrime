@@ -16,30 +16,39 @@ Q = [[v_rho, 0, 0],
      [0, 0, v_q]] #matrix for representing the error in measurement
 ###################################################################################################################################################################
 #Function: UpdatePosition
-#Purpose: Update the state vector of Sentinel, using information from the wheel encoders and the accelerometer
-#The accelerometer has not been included yet.
+#Purpose: Update the state vector of Sentinel, using information from the accelerometer.
+#           This assumes that the acceleration is measured from the center of mass of the body.
+#           The velocity of the car is tracked in the state vector as well
 #Inputs:
     #x, nx1 numpy array representing the state vector of Sentinel. The first three entries are the pose of Sentinel
     #dx_sum, 3x1 numpy array that is for tracking the total change in pose of Sentinel from the beginning of a new frame
-    #dt1, a float representing the change in angle (in radians) of wheel 1
-    #dt2, a float representing the change in angle (in radians) of wheel 2
+    #v, 3x1 numpy array that holds the velocities from the previous time step
+    #Ax, Acceleration in x-direction
+    #Ay, Acceleration in y-direction
+    #Alphaz, angular acceleration of robot about z-axis 
 #Outputs:
     #x, the updated state vector from Inputs.
     #dx_sum, the updated pose-change array
-def UpdatePosition(x,dx_sum,dt1,dt2):
-    theta = x[2][0]
-    dt = (R/L)*(dt2-dt1)
-    if dt>=2*np.pi:
-        dt += -2*np.pi
-    elif dt<0:
-        dt += 2*np.pi
-    if dt==0:
-        dx = -R*dt1*np.sin(theta)
-        dy = R*dt1*np.cos(theta)
-    else:
-        dx = (L/2)*(dt2+dt1)/(dt2-dt1)*(np.cos(theta+dt)-np.cos(theta))
-        dy = (L/2)*(dt2+dt1)/(dt2-dt1)*(np.sin(theta+dt)-np.sin(theta))
-    f = [[dx],[dy],[dt]]
+def UpdatePosition(x,dx_sum,v,dt,Ax,Ay,Alphaz):
+    # positions from previous time step
+    xr = x[0][0]
+    yr = x[1][0]
+    thetar = x[2][0]
+
+    # Velocities from previous time step
+    vx = v[0][0]
+    vy = v[1][0]
+    omegaz = v[2][0]
+
+    dvx = Ax*dt
+    dvy = Ay*dt
+    dOmegaz = Alphaz*dt
+
+    dxr = (vx+dvx)*dt
+    dyr = (vy+dvy)*dt
+    dthetar = (omegaz+dOmegaz)*dt
+
+    f = [[dxr],[dyr],[dthetar]]
     f_adjusted = np.append(f, np.zeros((len(x)-3,1)),0)
     x += f_adjusted
     dx_sum += f
@@ -60,13 +69,13 @@ def Update_PredictionModel(P, dx_sum):
     dtr = dx_sum[2][0]
     
     A = np.eye(len(P))
-    A[0][2] = -dyr
-    A[1][2] = dxr
-    print(A)
+    # A[0][2] = -dyr
+    # A[1][2] = dxr
+    # print(A)
 
     R = np.multiply(c,[[dxr**2, dxr*dyr, dxr*dtr],
-         [dyr*dxr, dyr**2, dyr*dtr],
-         [dtr*dxr, dtr*dyr, dtr**2]])
+                        [dyr*dxr, dyr**2, dyr*dtr],
+                        [dtr*dxr, dtr*dyr, dtr**2]])
     
     R.resize((6,6))
     Atrans = np.transpose(A)

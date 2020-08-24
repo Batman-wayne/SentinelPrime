@@ -1,4 +1,7 @@
-"""Purpose: This file is for connecting airsim to Unreal? (Please edit this comment @Harris)"""
+"""This script is an example of how to connect to the Unreal Engine (server) from the client (this script)
+
+    Author: Harris M  
+"""
 
 # Libraries 
 import airsim
